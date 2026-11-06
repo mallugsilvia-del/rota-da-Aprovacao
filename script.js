@@ -278,6 +278,10 @@ let indiceQuestao = 0;
 let dicasAbertas = new Set();
 let ordemAleatoria = [];
 let usuarioAtual = null;
+let nicknameAtual = "";
+let nomeRealAtual = "";
+let nicknamePendenteCadastro = "";
+let nomePendenteCadastro = "";
 let temporizadorSincronizacao = null;
 let carregandoProgressoNuvem = false;
 
@@ -620,6 +624,17 @@ const autenticacaoFirebase = window.ROTA_FIREBASE_ATIVO ? firebase.auth() : null
 let questoesAdmin = [];
 
 /* ---------- 11.1. CONTA E HISTÓRICO DO ESTUDANTE ---------- */
+function validarNickname(valor) {
+  const nickname=String(valor||"").trim();
+  if(!/^[A-Za-z0-9_.]{3,20}$/.test(nickname)) {
+    throw new Error("O nickname deve ter de 3 a 20 caracteres: letras, números, ponto ou underline, sem espaços.");
+  }
+  return nickname;
+}
+function nomeExibicaoUsuario() {
+  return nicknameAtual || usuarioAtual?.displayName || usuarioAtual?.email?.split("@")[0] || "Estudante";
+}
+
 function textoErroAutenticacao(erro) {
   const codigo=erro?.code||"";
   const mensagens={
@@ -657,7 +672,8 @@ async function sincronizarEstadoAgora() {
   if(!usuarioAtual||!bancoFirebase)return;
   try {
     await bancoFirebase.collection("usuarios").doc(usuarioAtual.uid).set({
-      nome:usuarioAtual.displayName||usuarioAtual.email?.split("@")[0]||"Estudante",
+      nome:nomeRealAtual||usuarioAtual.displayName||usuarioAtual.email?.split("@")[0]||"Estudante",
+      nickname:nicknameAtual||usuarioAtual.displayName||usuarioAtual.email?.split("@")[0]||"Estudante",
       email:usuarioAtual.email||"",
       avatar:avatarSelecionado,
       progresso:{
@@ -695,6 +711,9 @@ async function carregarEstadoNuvem(usuario) {
     const documento=await bancoFirebase.collection("usuarios").doc(usuario.uid).get();
     if(documento.exists){
       const dadosPerfil=documento.data();
+      // Conserva apelidos já salvos e mantém compatibilidade com contas antigas.
+      if(!nicknamePendenteCadastro)nicknameAtual=dadosPerfil.nickname||usuario.displayName||usuario.email?.split("@")[0]||"Estudante";
+      if(!nomePendenteCadastro)nomeRealAtual=dadosPerfil.nome||usuario.displayName||"";
       if(avatarValido(dadosPerfil.avatar)){
         avatarSelecionado=dadosPerfil.avatar;
         salvarAvatarLocal(usuario.uid,avatarSelecionado);
@@ -829,9 +848,10 @@ function renderizarConta() {
     return;
   }
   desconectada.hidden=true; conectada.hidden=false;
-  const nome=usuarioAtual.displayName||usuarioAtual.email?.split("@")[0]||"Estudante";
-  navTexto.textContent=nome.split(" ")[0];
-  document.getElementById("aluno-nome").textContent=nome;
+  const nickname=nomeExibicaoUsuario();
+  navTexto.textContent=`@${nickname.split(" ")[0]}`;
+  document.getElementById("aluno-nome").textContent=`@${nickname}`;
+  document.getElementById("aluno-nome-real").textContent=nomeRealAtual||"";
   document.getElementById("aluno-email").textContent=usuarioAtual.email||"Conta conectada";
   desenharAvatares();
   aviso.classList.add("sincronizado");
@@ -872,6 +892,9 @@ document.getElementById("form-login-aluno").addEventListener("submit",async even
 document.getElementById("form-cadastro-aluno").addEventListener("submit",async evento=>{
   evento.preventDefault();
   const nome=document.getElementById("aluno-cadastro-nome").value.trim();
+  let nickname;
+  try { nickname=validarNickname(document.getElementById("aluno-cadastro-nickname").value); }
+  catch(erro) { return mensagemConta(erro.message,"erro"); }
   const email=document.getElementById("aluno-cadastro-email").value.trim();
   const senha=document.getElementById("aluno-cadastro-senha").value;
   const confirmacao=document.getElementById("aluno-cadastro-confirmar").value;
@@ -880,14 +903,52 @@ document.getElementById("form-cadastro-aluno").addEventListener("submit",async e
   try {
     if(!autenticacaoFirebase)throw {code:"auth/operation-not-allowed"};
     const avatarCadastro=avatarSelecionado;
+    // onAuthStateChanged pode disparar antes de o cadastro terminar.
+    nicknamePendenteCadastro=nickname;
+    nomePendenteCadastro=nome;
     const credencial=await autenticacaoFirebase.createUserWithEmailAndPassword(email,senha);
-    await credencial.user.updateProfile({displayName:nome});
+    await credencial.user.updateProfile({displayName:nickname});
     usuarioAtual=credencial.user;
+    nicknameAtual=nickname;
+    nomeRealAtual=nome;
     avatarSelecionado=avatarCadastro;
     salvarAvatarLocal(credencial.user.uid,avatarCadastro);
     desenharAvatares();
     await sincronizarEstadoAgora(); renderizarConta();
-  } catch(erro) { mensagemConta(textoErroAutenticacao(erro),"erro"); }
+    mensagemConta("Conta criada! Seu nickname será exibido no perfil.","sucesso");
+    nicknamePendenteCadastro="";
+    nomePendenteCadastro="";
+  } catch(erro) {
+    nicknamePendenteCadastro="";
+    nomePendenteCadastro="";
+    mensagemConta(textoErroAutenticacao(erro),"erro");
+  }
+});
+
+document.getElementById("editar-nickname").addEventListener("click",()=>{
+  const formulario=document.getElementById("form-editar-nickname");
+  formulario.hidden=!formulario.hidden;
+  document.getElementById("nickname-novo").value=nicknameAtual||"";
+  document.getElementById("nickname-mensagem").textContent="";
+  if(!formulario.hidden)document.getElementById("nickname-novo").focus();
+});
+document.getElementById("cancelar-nickname").addEventListener("click",()=>{
+  document.getElementById("form-editar-nickname").hidden=true;
+});
+document.getElementById("form-editar-nickname").addEventListener("submit",async evento=>{
+  evento.preventDefault();
+  const retorno=document.getElementById("nickname-mensagem");
+  try {
+    if(!usuarioAtual||!bancoFirebase)throw new Error("Entre em sua conta para alterar o nickname.");
+    const novo=validarNickname(document.getElementById("nickname-novo").value);
+    retorno.textContent="Salvando...";
+    await usuarioAtual.updateProfile({displayName:novo});
+    nicknameAtual=novo;
+    renderizarConta();
+    await sincronizarEstadoAgora();
+    retorno.textContent="Nickname atualizado!";
+    setTimeout(()=>{document.getElementById("form-editar-nickname").hidden=true;},950);
+  } catch(erro) { retorno.textContent=textoErroAutenticacao(erro); }
 });
 
 document.getElementById("recuperar-senha").addEventListener("click",async()=>{
@@ -1287,6 +1348,8 @@ async function configurarAutenticacao() {
   avisoFirebase.innerHTML='<strong>Firebase conectado.</strong><p>Os estudantes veem as questões publicadas; somente administradores autorizados podem alterar o banco.</p>';
   autenticacaoFirebase.onAuthStateChanged(async usuario=>{
     usuarioAtual=usuario||null;
+    nicknameAtual=usuario?(nicknamePendenteCadastro||usuario.displayName||usuario.email?.split("@")[0]||"Estudante"):"";
+    nomeRealAtual=usuario?(nomePendenteCadastro||usuario.displayName||""):"";
     avatarSelecionado=lerAvatarLocal(usuario?.uid||"visitante")||lerAvatarLocal("visitante")||DEFAULT_AVATAR;
     desenharAvatares();
     renderizarConta();

@@ -1186,3 +1186,16 @@ footer .rodape {border-color:#eadcf4;box-shadow:0 13px 34px rgba(88,43,127,.06);
 .fundo-suave .duas-colunas>div:nth-child(2) .guia-mini .tipo {color:#ead5ff;}
 .fundo-suave .duas-colunas>div:nth-child(2) .guia-mini .botao-texto {color:#e2c7ff;}
 .fundo-suave .duas-colunas>div:nth-child(2) .guia-mini .botao-texto:hover {color:white;}
+
+/* V7 · Nickname escolhido pelo estudante */
+.auth-form .ajuda-campo {font-size:11px;color:#806994;font-weight:500;}
+.ajuda-nickname {margin:-8px 0 1px;color:#766483;font-size:11px;line-height:1.5;}
+.nickname-edicao {display:grid;grid-template-columns:minmax(0,1fr);align-items:center;gap:10px 16px;margin:-7px 0 23px;padding:20px 24px;border:1px solid #e3d4f6;border-radius:19px;background:#fdfaff;}
+.nickname-edicao strong {color:#4d2c75;font-size:15px;}
+.nickname-edicao p {margin:4px 0 0;color:#776787;font-size:12px;}
+.nickname-edicao label {color:#5c388a;font-size:12px;font-weight:800;}
+.nickname-edicao input {width:100%;min-height:44px;padding:10px 13px;border-radius:11px;border:1px solid #cbb0eb;background:white;color:#302047;outline:0;}
+.nickname-edicao input:focus {border-color:#9e61ec;box-shadow:0 0 0 3px #efe2fd;}
+.nickname-edicao .nickname-botoes {grid-column:1 / -1;display:flex;gap:8px;flex-wrap:wrap;}
+.nickname-edicao #nickname-mensagem {grid-column:1 / -1;margin:0;min-height:14px;}
+@media(max-width:640px){.nickname-edicao{grid-template-columns:1fr}.perfil-hero h2{overflow-wrap:anywhere;}}

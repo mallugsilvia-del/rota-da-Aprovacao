@@ -164,7 +164,9 @@
             </form>
             <form id="form-cadastro-aluno" class="auth-form" hidden>
               <div><span class="etiqueta">PRIMEIRO ACESSO</span><h2>Crie sua conta gratuita</h2></div>
-              <label>Nome<input id="aluno-cadastro-nome" autocomplete="name" placeholder="Como podemos chamar você?" required></label>
+              <label>Nome<input id="aluno-cadastro-nome" autocomplete="name" placeholder="Seu nome" required></label>
+              <label>Nickname <span class="ajuda-campo">Como você aparecerá no site</span><input id="aluno-cadastro-nickname" type="text" autocomplete="off" autocapitalize="none" spellcheck="false" minlength="3" maxlength="20" pattern="[A-Za-z0-9_.]{3,20}" placeholder="Ex.: gio_dev" title="Use de 3 a 20 letras, números, ponto ou underline, sem espaços" required></label>
+              <p class="ajuda-nickname">Escolha seu apelido de estudante: de 3 a 20 caracteres, sem espaços. Ele não substitui seu e-mail de acesso e pode ser igual ao de outro aluno.</p>
               <label>E-mail<input id="aluno-cadastro-email" type="email" autocomplete="email" placeholder="voce@email.com" required></label>
               <label>Senha<input id="aluno-cadastro-senha" type="password" autocomplete="new-password" minlength="6" placeholder="No mínimo 6 caracteres" required></label>
               <label>Confirmar senha<input id="aluno-cadastro-confirmar" type="password" autocomplete="new-password" minlength="6" placeholder="Repita a senha" required></label>
@@ -180,9 +182,16 @@
         <section id="conta-conectada" hidden>
           <div class="perfil-hero">
             <div id="aluno-avatar" class="aluno-avatar" aria-label="Avatar selecionado"></div>
-            <div><span class="etiqueta">CONTA DO ESTUDANTE</span><h2 id="aluno-nome">Estudante</h2><p id="aluno-email"></p><small id="status-sincronizacao">Progresso sincronizado</small></div>
-            <div class="perfil-acoes"><button id="escolher-avatar-conta" class="botao-secundario" type="button">Mudar silhueta</button><button id="sair-conta" class="botao-secundario" type="button">Sair da conta</button></div>
+            <div><span class="etiqueta">CONTA DO ESTUDANTE</span><h2 id="aluno-nome">Estudante</h2><p id="aluno-nome-real"></p><p id="aluno-email"></p><small id="status-sincronizacao">Progresso sincronizado</small></div>
+            <div class="perfil-acoes"><button id="editar-nickname" class="botao-secundario" type="button">Editar nickname</button><button id="escolher-avatar-conta" class="botao-secundario" type="button">Mudar silhueta</button><button id="sair-conta" class="botao-secundario" type="button">Sair da conta</button></div>
           </div>
+          <form id="form-editar-nickname" class="painel-branco nickname-edicao" hidden>
+            <div><strong>Alterar seu nickname</strong><p>Seu apelido aparece no menu e no perfil. O e-mail e a senha continuam os mesmos.</p></div>
+            <label for="nickname-novo">Novo nickname</label>
+            <input id="nickname-novo" type="text" minlength="3" maxlength="20" pattern="[A-Za-z0-9_.]{3,20}" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Ex.: gio_dev" title="Use de 3 a 20 letras, números, ponto ou underline, sem espaços" required>
+            <div class="nickname-botoes"><button class="botao-primario" type="submit">Salvar nickname</button><button id="cancelar-nickname" class="botao-secundario" type="button">Cancelar</button></div>
+            <p id="nickname-mensagem" role="status" aria-live="polite"></p>
+          </form>
           <div id="cards-conta" class="metricas-grid conta-metricas"></div>
           <div class="conta-conteudo-grid">
             <section class="painel-branco"><div class="titulo-painel"><div><span class="etiqueta">ATIVIDADE RECENTE</span><h2>Histórico de questões</h2></div><button class="botao-texto" data-page="questoes">Continuar prática →</button></div><div id="historico-conta" class="historico-conta"></div></section>

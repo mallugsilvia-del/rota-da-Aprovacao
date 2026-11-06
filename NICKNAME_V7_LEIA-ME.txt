@@ -1,0 +1,29 @@
+ROTA DA APROVAÇÃO V7 — NICKNAME DE ESTUDANTES
+
+O QUE MUDOU
+- O cadastro de alunos agora pede Nome e Nickname.
+- O nickname deve ter 3 a 20 caracteres (letras A-Z, números, ponto ou underline, sem espaços).
+- Ele aparece com @ no menu e no perfil do estudante.
+- O aluno pode alterar o nickname no perfil (botão "Editar nickname").
+- O apelido fica salvo no campo "nickname" de Firestore: usuarios/{uid}.
+- O nome real continua salvo no campo "nome" da mesma coleção.
+- Contas anteriores continuam funcionando e podem escolher nickname pelo botão no perfil.
+- O acesso continua por e-mail/senha ou Google; o nickname NÃO substitui o e-mail no login.
+- Nicknames podem se repetir; se quiser nomes exclusivos e login por nickname,
+  é necessário implementar verificação de unicidade e autenticação com backend.
+
+FIREBASE
+- Para esta alteração, não é necessário adicionar coleções nem modificar as
+  regras do Firestore: usuarios/{uid} já permite escrita pelo dono da conta.
+- O Firebase Authentication deve estar habilitado para e-mail/senha.
+- Para atualizar um site já publicado, substitua index.html, style.css e script.js
+  pelos desta versão e mantenha o restante dos arquivos.
+
+TESTE
+1. Cadastre uma nova conta com nickname.
+2. Verifique o @nickname no menu e no perfil.
+3. Abra Firestore > usuarios > UID e veja "nickname" e "nome".
+4. Saia e entre novamente para confirmar persistência.
+5. Clique em Editar nickname e salve outro nome.
+
+OBS.: Este ZIP mantém as mesmas questões, imagens, administração e calendários da V6.
