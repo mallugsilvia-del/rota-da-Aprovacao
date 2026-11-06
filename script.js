@@ -870,7 +870,9 @@ function renderizarConta() {
   navTexto.textContent=`@${nickname.split(" ")[0]}`;
   document.getElementById("aluno-nome").textContent=`@${nickname}`;
   document.getElementById("aluno-nome-real").textContent=nomeRealAtual||"";
-  document.getElementById("aluno-email").textContent=usuarioAtual.email||"Conta conectada";
+  const emailImportado=String(usuarioAtual.email||"").toLowerCase().endsWith("@contas-rota.invalid");
+  document.getElementById("aluno-email").textContent=emailImportado?"E-mail de recuperação pendente":(usuarioAtual.email||"Conta conectada");
+  document.getElementById("email-provisorio-aviso").hidden=!emailImportado;
   desenharAvatares();
   aviso.classList.add("sincronizado");
   aviso.innerHTML='<span>✓</span><p><strong>Progresso sincronizado.</strong> Suas respostas e favoritas acompanham sua conta.</p>';
@@ -974,6 +976,28 @@ document.getElementById("form-cadastro-aluno").addEventListener("submit",async e
     nicknamePendenteCadastro="";
     nomePendenteCadastro="";
     mensagemConta(textoErroAutenticacao(erro),"erro");
+  }
+});
+
+// Contas importadas sem e-mail real podem adicionar um endereço verificável
+// preservando UID, nickname, senha e histórico. Não é obrigatório para login,
+// mas é necessário para recuperação futura da senha.
+document.getElementById("form-email-recuperacao").addEventListener("submit",async evento=>{
+  evento.preventDefault();
+  const aviso=document.getElementById("email-recuperacao-feedback");
+  const email=document.getElementById("email-recuperacao-novo").value.trim();
+  try {
+    if(!usuarioAtual||!String(usuarioAtual.email||"").toLowerCase().endsWith("@contas-rota.invalid"))
+      throw new Error("Sua conta já possui um e-mail de recuperação.");
+    if(!email||!email.includes("@"))throw new Error("Informe um e-mail válido.");
+    if(typeof usuarioAtual.verifyBeforeUpdateEmail!=="function")
+      throw new Error("Atualize a página e tente novamente. Seu navegador não possui a função de verificação de e-mail.");
+    await usuarioAtual.verifyBeforeUpdateEmail(email);
+    aviso.textContent="Enviamos uma confirmação ao novo e-mail. Abra a mensagem e confirme o endereço. Depois, atualize a página.";
+  }catch(erro){
+    if(erro?.code==="auth/requires-recent-login")aviso.textContent="Por segurança, saia e entre novamente antes de trocar o e-mail.";
+    else if(erro?.code==="auth/email-already-in-use")aviso.textContent="Esse e-mail já pertence a outra conta. Use outro endereço.";
+    else aviso.textContent=erro?.message||"Não foi possível enviar o e-mail de confirmação.";
   }
 });
 

@@ -1,0 +1,12 @@
+Rota da Aprovação V9 — continuação da V8
+
+- Todas as funcionalidades da V8 foram mantidas: login por nickname, autenticação
+  administrativa, 874 questões, avatares e agenda.
+- Para alunos pré-cadastrados com e-mail interno "@contas-rota.invalid",
+  o perfil exibe um formulário para cadastrar um e-mail real de recuperação.
+- O link de verificação é enviado pelo Firebase (verifyBeforeUpdateEmail);
+  só depois da confirmação o e-mail deve ser atualizado.
+- A troca preserva UID, nickname, senha e histórico de questões.
+- Este ZIP contém APENAS o site público. A planilha nominativa e o importador
+  estão em um ZIP SEPARADO e PRIVADO, que NUNCA deve ser publicado na internet.
+- É necessário que as Cloud Functions e regras da V8 estejam publicadas.

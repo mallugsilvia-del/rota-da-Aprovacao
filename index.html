@@ -197,6 +197,15 @@
             <div class="nickname-botoes"><button class="botao-primario" type="submit">Salvar nickname</button><button id="cancelar-nickname" class="botao-secundario" type="button">Cancelar</button></div>
             <p id="nickname-mensagem" role="status" aria-live="polite"></p>
           </form>
+          <section id="email-provisorio-aviso" class="painel-branco nickname-edicao" hidden>
+            <div><strong>Cadastre seu e-mail de recuperação</strong><p>Sua conta foi importada para permitir login por nickname. Adicione um e-mail verdadeiro e confirme a mensagem recebida para conseguir recuperar a senha futuramente.</p></div>
+            <form id="form-email-recuperacao">
+              <label for="email-recuperacao-novo">Seu e-mail pessoal</label>
+              <input id="email-recuperacao-novo" type="email" autocomplete="email" placeholder="seunome@email.com" required>
+              <div class="nickname-botoes"><button class="botao-primario" type="submit">Enviar confirmação para meu e-mail</button></div>
+              <p id="email-recuperacao-feedback" role="status" aria-live="polite"></p>
+            </form>
+          </section>
           <div id="cards-conta" class="metricas-grid conta-metricas"></div>
           <div class="conta-conteudo-grid">
             <section class="painel-branco"><div class="titulo-painel"><div><span class="etiqueta">ATIVIDADE RECENTE</span><h2>Histórico de questões</h2></div><button class="botao-texto" data-page="questoes">Continuar prática →</button></div><div id="historico-conta" class="historico-conta"></div></section>
