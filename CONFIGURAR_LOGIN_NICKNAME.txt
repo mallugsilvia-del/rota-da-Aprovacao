@@ -1,0 +1,69 @@
+ROTA DA APROVAÇÃO V8 — LOGIN POR NICKNAME E SENHA
+
+ESTE ZIP CONTÉM O SITE COMPLETO E AS CLOUD FUNCTIONS NECESSÁRIAS.
+ATENÇÃO: substituir somente o site NÃO ativa o login por nickname.
+É PRECISO PUBLICAR AS FUNÇÕES NO SEU PRÓPRIO PROJETO FIREBASE.
+
+1. No Firebase Console: confirme Authentication > Sign-in method > E-mail/senha.
+   O cadastro continua solicitando e-mail para recuperar a senha.
+2. No Firebase Console: confirme que existe um Firestore Database no projeto.
+3. Para publicar Cloud Functions, o projeto precisa do plano Blaze
+   (cobrança conforme uso; pode haver faixa gratuita, verifique limites).
+4. Instale Node.js 22 e Firebase CLI em seu computador:
+       npm install -g firebase-tools
+       firebase login
+5. Abra um TERMINAL DENTRO da pasta extraída deste ZIP (onde fica firebase.json).
+   Confira o projeto: firebase use rota-de-aprova
+   Instale dependências das funções:
+       cd functions
+       npm install
+       cd ..
+   Publique as funções e as regras:
+       firebase deploy --only functions,firestore:rules
+6. Publique o site (index.html, script.js, style.css, firebase-config.js,
+   classificador.js, imagens, banco-questoes etc.) no mesmo domínio de antes.
+   Se usa GitHub Pages, mantenha o domínio autorizado em Firebase Authentication.
+
+COMO FUNCIONA
+- Cadastro: Nome + Nickname EXCLUSIVO + E-mail + Senha + Avatar.
+- Login do aluno: Nickname + Senha. Ex.: gio_dev (ou @gio_dev).
+- Login administrativo: continua com E-mail + Senha na aba administrativa.
+- Recuperação: Esqueci minha senha > E-mail cadastrado.
+- Google: continua existindo; para entrar por nickname, essa conta precisa
+  também ter uma senha de e-mail cadastrada no Firebase Auth.
+- Nicknames não diferenciam maiúsculas de minúsculas, e a coleção
+  nicknames/{nickname_minusculo} tem apenas o UID, nunca o e-mail.
+- Firestore: usuarios/{uid} continua contendo histórico e avatar.
+  As Cloud Functions são as únicas que alteram nickname e nicknameChave.
+- Contas antigas (V7): uma vez só, clique em "Tenho conta antiga:
+  entrar com e-mail". O site tenta reservar o apelido antigo.
+  Se o apelido já estiver usado, vá ao perfil > Editar nickname para escolher
+  um diferente. UID, senha e histórico de questões continuam os mesmos.
+- Uma conta Google sem senha precisa usar Google, até vincular e-mail/senha.
+
+DADOS E SEGURANÇA
+- Nenhuma senha fica salva no Firestore: a verificação é feita pelo Firebase Auth.
+- A Cloud Function envia e-mail/senha de forma segura ao serviço de
+  autenticação do Firebase, sem retornar o e-mail ao navegador.
+- A indexação de nicknames é feita por transação para impedir duplicações.
+- Publicar AS REGRAS INCLUÍDAS é essencial para que o aluno não altere
+  o índice e os próprios campos protegidos sem passar pela função.
+- Recomendado antes de lançar publicamente: ativar Firebase App Check e
+  configurar proteção contra abuso/tentativas de senha; acompanhe custos no Blaze.
+- O arquivo functions/.env contém apenas a chave de API WEB já pública em
+  firebase-config.js, NÃO contém senha nem chave privada de conta de serviço.
+- Este projeto foi preparado para Firebase com ID rota-de-aprova.
+  Se usar outro Firebase, atualize .firebaserc, firebase-config.js e functions/.env.
+
+TESTE
+1. Cadastro de aluno com nickname exemplo: aluno_teste.
+2. Saia da conta, entre com aluno_teste + senha.
+3. Entre em outro navegador: confirme que o mesmo UID e histórico carregam.
+4. Tente criar outro aluno com ALUNO_TESTE: deve avisar que está ocupado.
+5. Troque o nickname no perfil, saia e confirme que só o novo funciona.
+6. Teste o login no painel administrativo com o e-mail do administrador.
+7. Teste Esqueci minha senha usando o e-mail do aluno.
+
+SE AS FUNÇÕES NÃO FOREM PUBLICADAS, O SITE EXIBIRÁ UMA MENSAGEM DE
+ERRO NO LOGIN POR NICKNAME. NÃO EXISTE LOGIN DIRETO POR NICKNAME NO
+FIREBASE AUTH SEM ALGUMA LÓGICA DE BACKEND OU INDIREÇÃO EQUIVALENTE.

@@ -1199,3 +1199,10 @@ footer .rodape {border-color:#eadcf4;box-shadow:0 13px 34px rgba(88,43,127,.06);
 .nickname-edicao .nickname-botoes {grid-column:1 / -1;display:flex;gap:8px;flex-wrap:wrap;}
 .nickname-edicao #nickname-mensagem {grid-column:1 / -1;margin:0;min-height:14px;}
 @media(max-width:640px){.nickname-edicao{grid-template-columns:1fr}.perfil-hero h2{overflow-wrap:anywhere;}}
+
+/* V8: recuperação de senha por e-mail sem substituir o login por nickname */
+.recuperacao-email{display:grid;gap:.7rem;padding:1rem;border:1px solid #ddd3f8;border-radius:14px;background:#faf7ff}
+.recuperacao-email[hidden]{display:none!important}
+.recuperacao-email label{font-size:.9rem}
+.recuperacao-email input{width:100%}
+#alternar-login-antigo{text-align:left;align-self:start}

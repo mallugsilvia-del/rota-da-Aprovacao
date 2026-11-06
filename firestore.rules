@@ -35,8 +35,20 @@ service cloud.firestore {
       // O estudante lê e atualiza somente o próprio perfil e histórico.
       // Administradores podem ler ou excluir em atendimentos de suporte.
       allow read: if estaLogado() && (request.auth.uid == usuarioId || ehAdmin());
-      allow create, update: if estaLogado() && request.auth.uid == usuarioId;
+      // O servidor mantém nickname/nicknameChave e o índice de unicidade.
+      // O aluno pode editar histórico e avatar, mas não falsificar o nickname.
+      allow create: if estaLogado() && request.auth.uid == usuarioId
+        && !('nickname' in request.resource.data)
+        && !('nicknameChave' in request.resource.data);
+      allow update: if estaLogado() && request.auth.uid == usuarioId
+        && request.resource.data.get('nickname', '') == resource.data.get('nickname', '')
+        && request.resource.data.get('nicknameChave', '') == resource.data.get('nicknameChave', '');
       allow delete: if estaLogado() && (request.auth.uid == usuarioId || ehAdmin());
+    }
+
+    match /nicknames/{chave} {
+      // O índice de nomes fica somente no servidor. Não expõe e-mails.
+      allow read, write: if false;
     }
 
     // Nega qualquer coleção que não tenha sido declarada acima.

@@ -157,16 +157,21 @@
             <div class="auth-abas" role="tablist" aria-label="Entrar ou criar conta"><button class="active" type="button" data-auth-tab="login">Entrar</button><button type="button" data-auth-tab="cadastro">Criar conta</button></div>
             <form id="form-login-aluno" class="auth-form">
               <div><span class="etiqueta">BEM-VINDO DE VOLTA</span><h2>Entre na sua conta</h2></div>
-              <label>E-mail<input id="aluno-login-email" type="email" autocomplete="username" placeholder="voce@email.com" required></label>
+              <label id="aluno-login-rotulo">Nickname<input id="aluno-login-nickname" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="Seu nickname" maxlength="80" required></label>
               <label>Senha<input id="aluno-login-senha" type="password" autocomplete="current-password" minlength="6" placeholder="Sua senha" required></label>
               <button class="botao-primario" type="submit">Entrar e sincronizar</button>
+              <button id="alternar-login-antigo" class="botao-texto" type="button">Tenho conta antiga: entrar com e-mail</button>
               <button id="recuperar-senha" class="botao-texto" type="button">Esqueci minha senha</button>
+              <div id="recuperar-senha-area" class="recuperacao-email" hidden>
+                <label>E-mail cadastrado<input id="aluno-recuperacao-email" type="email" autocomplete="email" placeholder="seu@email.com"></label>
+                <button id="enviar-recuperacao" class="botao-secundario" type="button">Enviar link para redefinir senha</button>
+              </div>
             </form>
             <form id="form-cadastro-aluno" class="auth-form" hidden>
               <div><span class="etiqueta">PRIMEIRO ACESSO</span><h2>Crie sua conta gratuita</h2></div>
               <label>Nome<input id="aluno-cadastro-nome" autocomplete="name" placeholder="Seu nome" required></label>
               <label>Nickname <span class="ajuda-campo">Como você aparecerá no site</span><input id="aluno-cadastro-nickname" type="text" autocomplete="off" autocapitalize="none" spellcheck="false" minlength="3" maxlength="20" pattern="[A-Za-z0-9_.]{3,20}" placeholder="Ex.: gio_dev" title="Use de 3 a 20 letras, números, ponto ou underline, sem espaços" required></label>
-              <p class="ajuda-nickname">Escolha seu apelido de estudante: de 3 a 20 caracteres, sem espaços. Ele não substitui seu e-mail de acesso e pode ser igual ao de outro aluno.</p>
+              <p class="ajuda-nickname">Esse será seu nome de acesso. Use de 3 a 20 caracteres, sem espaços. Cada nickname deve ser exclusivo (maiúsculas e minúsculas contam como iguais).</p>
               <label>E-mail<input id="aluno-cadastro-email" type="email" autocomplete="email" placeholder="voce@email.com" required></label>
               <label>Senha<input id="aluno-cadastro-senha" type="password" autocomplete="new-password" minlength="6" placeholder="No mínimo 6 caracteres" required></label>
               <label>Confirmar senha<input id="aluno-cadastro-confirmar" type="password" autocomplete="new-password" minlength="6" placeholder="Repita a senha" required></label>
@@ -186,7 +191,7 @@
             <div class="perfil-acoes"><button id="editar-nickname" class="botao-secundario" type="button">Editar nickname</button><button id="escolher-avatar-conta" class="botao-secundario" type="button">Mudar silhueta</button><button id="sair-conta" class="botao-secundario" type="button">Sair da conta</button></div>
           </div>
           <form id="form-editar-nickname" class="painel-branco nickname-edicao" hidden>
-            <div><strong>Alterar seu nickname</strong><p>Seu apelido aparece no menu e no perfil. O e-mail e a senha continuam os mesmos.</p></div>
+            <div><strong>Alterar seu nickname</strong><p>O nickname é seu nome de login e deve ser exclusivo. Seu e-mail é usado para recuperar a senha.</p></div>
             <label for="nickname-novo">Novo nickname</label>
             <input id="nickname-novo" type="text" minlength="3" maxlength="20" pattern="[A-Za-z0-9_.]{3,20}" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Ex.: gio_dev" title="Use de 3 a 20 letras, números, ponto ou underline, sem espaços" required>
             <div class="nickname-botoes"><button class="botao-primario" type="submit">Salvar nickname</button><button id="cancelar-nickname" class="botao-secundario" type="button">Cancelar</button></div>
@@ -288,6 +293,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-functions-compat.js"></script>
   <script src="firebase-config.js"></script>
   <script src="classificador.js"></script>
   <script src="script.js"></script>

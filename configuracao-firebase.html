@@ -9,9 +9,9 @@
 <body class="pagina-configuracao">
   <main class="container secao guia-configuracao">
     <a href="index.html">← Voltar ao site</a>
-    <span class="etiqueta">SEM NODE.JS</span>
+    <span class="etiqueta">SITE ESTÁTICO + FUNÇÕES FIREBASE</span>
     <h1>Como conectar o Rota da Aprovação ao Firebase</h1>
-    <p class="resumo-destaque">Você fará esta configuração uma única vez. Depois, estudantes poderão criar contas e sincronizar o histórico, enquanto administradores autorizados gerenciam as questões.</p>
+    <p class="resumo-destaque">Configure o banco uma única vez e publique as Cloud Functions de login por nickname. Depois os alunos poderão entrar com apelido e senha, mantendo o histórico; os administradores continuam usando o e-mail.</p>
 
     <ol class="etapas-configuracao">
       <li><strong>Crie o projeto.</strong><span>Acesse o Console do Firebase, crie um projeto e adicione um aplicativo do tipo Web.</span></li>
@@ -20,13 +20,14 @@
       <li><strong>Autorize o domínio.</strong><span>Em “Authentication → Settings → Authorized domains”, inclua o domínio publicado, como <code>usuario.github.io</code>.</span></li>
       <li><strong>Configure o site.</strong><span>Copie o objeto firebaseConfig do Console e substitua os valores no arquivo <code>firebase-config.js</code>.</span></li>
       <li><strong>Publique as regras.</strong><span>Copie todo o conteúdo de <code>firestore.rules</code> para “Firestore → Regras” e clique em publicar.</span></li>
+      <li><strong>Ative o login por nickname.</strong><span>Cloud Functions exigem o plano Blaze no Firebase e uma publicação inicial pelo terminal com Node.js e Firebase CLI. Abra o arquivo <code>CONFIGURAR_LOGIN_NICKNAME.txt</code> que acompanha o projeto: ele traz os comandos completos.</span></li>
       <li><strong>Autorize seu administrador.</strong><span>Crie primeiro a conta no Authentication, copie o UID exibido e, no Firestore, crie a coleção <code>admins</code> com um documento cujo ID seja exatamente esse UID. Adicione o campo <code>ativo</code> com valor booleano <code>true</code>.</span></li>
       <li><strong>Abra o painel Admin.</strong><span>Entre com a conta autorizada. No painel Admin, use “Carregar banco completo do projeto” e depois “Importar JSON no Firestore”.</span></li>
     </ol>
 
     <section class="painel-branco">
       <h2>Onde o site pode ser publicado?</h2>
-      <p>Como é um site estático, você pode usar Firebase Hosting, GitHub Pages ou outro serviço que entregue arquivos HTML, CSS e JavaScript. O computador da escola não precisa ter Node.js para acessar e usar o site já publicado.</p>
+      <p>O site continua estático e pode ficar no Firebase Hosting, GitHub Pages ou qualquer hospedagem de HTML/CSS/JS. Somente a implantação inicial das Cloud Functions exige Node.js e Firebase CLI no computador do responsável. Alunos usam normalmente o site no navegador.</p>
     </section>
 
     <section class="painel-branco">
@@ -35,8 +36,8 @@
     </section>
 
     <section class="painel-branco">
-      <h2>Quando o login disser “e-mail ou senha inválidos”</h2>
-      <p>Um registro em <code>admins/{UID}</code> não cria a conta de acesso. Crie a conta primeiro, use “Esqueci minha senha” se ela já existir e confira se E-mail/senha está habilitado. Estudantes comuns não precisam de documento em <code>admins</code>.</p>
+      <h2>Quando o login por nickname não funcionar</h2>
+      <p>Confirme que publicou as funções <code>loginComNickname</code>, <code>verificarNickname</code> e <code>reservarNickname</code>. Também é preciso publicar o arquivo <code>firestore.rules</code> desta versão. A coleção <code>admins/{UID}</code> continua exclusiva do administrador.</p>
     </section>
   </main>
 </body>

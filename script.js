@@ -621,6 +621,19 @@ document.getElementById("limpar-progresso").addEventListener("click",()=>{
    Não exige npm, compilação ou Node.js no computador da escola. */
 const bancoFirebase = window.ROTA_FIREBASE_ATIVO ? firebase.firestore() : null;
 const autenticacaoFirebase = window.ROTA_FIREBASE_ATIVO ? firebase.auth() : null;
+// Cloud Functions da região de São Paulo. Elas preservam e-mail/senha no Firebase Auth.
+const funcoesFirebase = window.ROTA_FIREBASE_ATIVO && firebase.functions
+  ? firebase.app().functions("southamerica-east1") : null;
+async function chamarFuncaoConta(nome, dados) {
+  if(!funcoesFirebase)throw new Error("O serviço de login por nickname não está disponível. Publique as Cloud Functions descritas no guia CONFIGURAR_LOGIN_NICKNAME.txt.");
+  try { return (await funcoesFirebase.httpsCallable(nome)(dados)).data; }
+  catch(erro) {
+    if(erro.code === "functions/not-found" || erro.code === "functions/unavailable")
+      throw new Error("Login por nickname ainda não ativado no Firebase. Publique as Cloud Functions incluídas no ZIP.");
+    throw erro;
+  }
+}
+let loginLegadoEmail = false;
 let questoesAdmin = [];
 
 /* ---------- 11.1. CONTA E HISTÓRICO DO ESTUDANTE ---------- */
@@ -638,9 +651,9 @@ function nomeExibicaoUsuario() {
 function textoErroAutenticacao(erro) {
   const codigo=erro?.code||"";
   const mensagens={
-    "auth/invalid-credential":"E-mail ou senha não reconhecidos. Se este for seu primeiro acesso, crie uma conta; se esqueceu a senha, use a recuperação.",
-    "auth/user-not-found":"Não encontramos uma conta com este e-mail. Confira o endereço ou crie sua conta.",
-    "auth/wrong-password":"A senha não confere. Tente novamente ou use “Esqueci minha senha”.",
+    "auth/invalid-credential":"Credenciais incorretas. Confira o nickname e a senha, ou utilize a recuperação de senha.",
+    "auth/user-not-found":"Conta não encontrada. Confira seus dados ou crie sua conta.",
+    "auth/wrong-password":"Senha incorreta. Tente novamente ou use “Esqueci minha senha”.",
     "auth/email-already-in-use":"Este e-mail já possui uma conta. Use a aba Entrar ou recupere sua senha.",
     "auth/weak-password":"Escolha uma senha com pelo menos 6 caracteres.",
     "auth/invalid-email":"Digite um endereço de e-mail válido.",
@@ -649,7 +662,13 @@ function textoErroAutenticacao(erro) {
     "auth/popup-blocked":"O navegador bloqueou a janela do Google. Libere pop-ups e tente novamente.",
     "auth/popup-closed-by-user":"A janela de login foi fechada antes da conclusão.",
     "auth/too-many-requests":"Muitas tentativas em pouco tempo. Aguarde alguns minutos ou redefina sua senha.",
-    "auth/network-request-failed":"Falha de conexão. Confira a internet e tente novamente."
+    "auth/network-request-failed":"Falha de conexão. Confira a internet e tente novamente.",
+    "functions/unauthenticated":"Nickname ou senha incorretos.",
+    "functions/permission-denied":"Essa conta não pode entrar pela área de estudantes. Use o acesso administrativo.",
+    "functions/already-exists":"Este nickname já está em uso. Escolha outro.",
+    "functions/invalid-argument":"Nickname inválido. Use de 3 a 20 caracteres, sem espaços.",
+    "functions/resource-exhausted":"Muitas tentativas. Aguarde e tente novamente.",
+    "functions/deadline-exceeded":"O login demorou demais. Tente novamente."
   };
   return mensagens[codigo]||erro?.message||"Não foi possível concluir o acesso. Tente novamente.";
 }
@@ -673,7 +692,6 @@ async function sincronizarEstadoAgora() {
   try {
     await bancoFirebase.collection("usuarios").doc(usuarioAtual.uid).set({
       nome:nomeRealAtual||usuarioAtual.displayName||usuarioAtual.email?.split("@")[0]||"Estudante",
-      nickname:nicknameAtual||usuarioAtual.displayName||usuarioAtual.email?.split("@")[0]||"Estudante",
       email:usuarioAtual.email||"",
       avatar:avatarSelecionado,
       progresso:{
@@ -880,11 +898,35 @@ document.querySelectorAll("[data-auth-tab]").forEach(botao=>botao.addEventListen
   mensagemConta("");
 }));
 
+// O aluno entra com nickname; e-mail só para migração de contas antigas e recuperação.
+document.getElementById("alternar-login-antigo").addEventListener("click",()=>{
+  loginLegadoEmail=!loginLegadoEmail;
+  const rotulo=document.getElementById("aluno-login-rotulo");
+  const campo=document.getElementById("aluno-login-nickname");
+  rotulo.firstChild.textContent=loginLegadoEmail?"E-mail":"Nickname";
+  campo.type=loginLegadoEmail?"email":"text";
+  campo.placeholder=loginLegadoEmail?"seu@email.com":"Seu nickname";
+  campo.value="";
+  document.getElementById("alternar-login-antigo").textContent=loginLegadoEmail
+    ?"Voltar ao login por nickname":"Tenho conta antiga: entrar com e-mail";
+  mensagemConta(loginLegadoEmail?"Use seu e-mail uma vez. Depois, confirme o nickname no perfil para acessar com ele.":"Digite seu nickname e sua senha.","info");
+  campo.focus();
+});
+
 document.getElementById("form-login-aluno").addEventListener("submit",async evento=>{
   evento.preventDefault(); mensagemConta("Entrando…","info");
+  const login=document.getElementById("aluno-login-nickname").value.trim();
+  const senha=document.getElementById("aluno-login-senha").value;
   try {
     if(!autenticacaoFirebase)throw {code:"auth/operation-not-allowed"};
-    await autenticacaoFirebase.signInWithEmailAndPassword(document.getElementById("aluno-login-email").value.trim(),document.getElementById("aluno-login-senha").value);
+    if(loginLegadoEmail){
+      await autenticacaoFirebase.signInWithEmailAndPassword(login,senha);
+    } else {
+      const nickname=validarNickname(login.replace(/^@/,""));
+      const resposta=await chamarFuncaoConta("loginComNickname",{nickname,senha});
+      if(!resposta?.token)throw new Error("A autenticação não retornou um token válido.");
+      await autenticacaoFirebase.signInWithCustomToken(resposta.token);
+    }
     mensagemConta("Conta conectada. Seu histórico está sendo sincronizado.","sucesso");
   } catch(erro) { mensagemConta(textoErroAutenticacao(erro),"erro"); }
 });
@@ -902,11 +944,21 @@ document.getElementById("form-cadastro-aluno").addEventListener("submit",async e
   mensagemConta("Criando sua conta…","info");
   try {
     if(!autenticacaoFirebase)throw {code:"auth/operation-not-allowed"};
+    const disponibilidade=await chamarFuncaoConta("verificarNickname",{nickname});
+    if(!disponibilidade?.disponivel)throw {code:"functions/already-exists"};
     const avatarCadastro=avatarSelecionado;
     // onAuthStateChanged pode disparar antes de o cadastro terminar.
     nicknamePendenteCadastro=nickname;
     nomePendenteCadastro=nome;
     const credencial=await autenticacaoFirebase.createUserWithEmailAndPassword(email,senha);
+    // Reserva no servidor de forma atômica: dois alunos não podem ter o mesmo nickname.
+    try { await chamarFuncaoConta("reservarNickname",{nickname}); }
+    catch(erro) {
+      // A conta do Firebase já existe. Não a excluímos e não apagamos seu histórico.
+      mensagemConta("Sua conta foi criada, mas o nickname não pôde ser reservado: "+textoErroAutenticacao(erro)+". Escolha outro em Editar nickname no perfil.","erro");
+      nicknamePendenteCadastro=""; nomePendenteCadastro="";
+      return;
+    }
     await credencial.user.updateProfile({displayName:nickname});
     usuarioAtual=credencial.user;
     nicknameAtual=nickname;
@@ -915,7 +967,7 @@ document.getElementById("form-cadastro-aluno").addEventListener("submit",async e
     salvarAvatarLocal(credencial.user.uid,avatarCadastro);
     desenharAvatares();
     await sincronizarEstadoAgora(); renderizarConta();
-    mensagemConta("Conta criada! Seu nickname será exibido no perfil.","sucesso");
+    mensagemConta("Conta criada! Na próxima vez, entre com seu nickname e sua senha.","sucesso");
     nicknamePendenteCadastro="";
     nomePendenteCadastro="";
   } catch(erro) {
@@ -942,6 +994,7 @@ document.getElementById("form-editar-nickname").addEventListener("submit",async 
     if(!usuarioAtual||!bancoFirebase)throw new Error("Entre em sua conta para alterar o nickname.");
     const novo=validarNickname(document.getElementById("nickname-novo").value);
     retorno.textContent="Salvando...";
+    await chamarFuncaoConta("reservarNickname",{nickname:novo});
     await usuarioAtual.updateProfile({displayName:novo});
     nicknameAtual=novo;
     renderizarConta();
@@ -951,12 +1004,18 @@ document.getElementById("form-editar-nickname").addEventListener("submit",async 
   } catch(erro) { retorno.textContent=textoErroAutenticacao(erro); }
 });
 
-document.getElementById("recuperar-senha").addEventListener("click",async()=>{
-  const email=document.getElementById("aluno-login-email").value.trim();
-  if(!email)return mensagemConta("Digite seu e-mail acima para receber o link de recuperação.","erro");
+document.getElementById("recuperar-senha").addEventListener("click",()=>{
+  const area=document.getElementById("recuperar-senha-area");
+  area.hidden=!area.hidden;
+  if(!area.hidden)document.getElementById("aluno-recuperacao-email").focus();
+});
+document.getElementById("enviar-recuperacao").addEventListener("click",async()=>{
+  const email=document.getElementById("aluno-recuperacao-email").value.trim();
+  if(!email)return mensagemConta("Informe o e-mail cadastrado para recuperar a senha.","erro");
   try {
+    if(!autenticacaoFirebase)throw {code:"auth/operation-not-allowed"};
     await autenticacaoFirebase.sendPasswordResetEmail(email);
-    mensagemConta("Enviamos um link de recuperação. Confira também a caixa de spam.","sucesso");
+    mensagemConta("Se a conta existir, você receberá um link no e-mail. Confira também o spam.","sucesso");
   } catch(erro) { mensagemConta(textoErroAutenticacao(erro),"erro"); }
 });
 
@@ -1362,6 +1421,23 @@ async function configurarAutenticacao() {
     try {
       const permissao=await bancoFirebase.collection("admins").doc(usuario.uid).get();
       if(!permissao.exists||permissao.data().ativo!==true) {
+        // Migra o nickname da V7 sem alterar UID, senha ou histórico.
+        if(!nicknamePendenteCadastro){
+          try {
+            const perfil=await bancoFirebase.collection("usuarios").doc(usuario.uid).get();
+            if(!perfil.data()?.nicknameChave){
+              const anterior=validarNickname(perfil.data()?.nickname || usuario.displayName || "");
+              const resultado=await chamarFuncaoConta("reservarNickname",{nickname:anterior});
+              nicknameAtual=resultado.nickname;
+              await usuario.updateProfile({displayName:resultado.nickname});
+              renderizarConta();
+            }
+          } catch(erro) {
+            console.warn("Nickname antigo exige confirmação no perfil:",erro.code||erro.message);
+            const status=document.getElementById("status-sincronizacao");
+            if(status)status.textContent="Para entrar por nickname, escolha um nome disponível em Editar nickname.";
+          }
+        }
         loginAdmin.hidden=false; painelAdmin.hidden=true;
         document.getElementById("login-erro").textContent="Esta conta está conectada como estudante, mas não possui permissão administrativa. Para abrir o painel, entre com uma conta cadastrada em admins/{UID}.";
         return;
